@@ -1,4 +1,5 @@
-import React, { Component } from 'react';
+import Inferno from 'inferno';
+import Component from 'inferno-component';
 import ExecutionEnvironment from 'exenv';
 import shallowEqual from 'shallowequal';
 
@@ -23,7 +24,7 @@ module.exports = function withSideEffect(
 
   return function wrap(WrappedComponent) {
     if (typeof WrappedComponent !== 'function') {
-      throw new Error('Expected WrappedComponent to be a React component.');
+      throw new Error('Expected WrappedComponent to be an Inferno component.');
     }
 
     let mountedInstances = [];

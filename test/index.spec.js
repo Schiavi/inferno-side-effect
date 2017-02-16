@@ -1,17 +1,18 @@
 const { expect } = require('chai');
-const React = require('react');
+const Inferno = require('inferno');
+const Component = require('inferno-component');
+const createClass = require('inferno-create-class');
+const InfernoServer = require('inferno-server');
 const ExecutionEnvironment = require('exenv');
 const jsdom = require('jsdom');
-const { shallow, mount } = require('enzyme')
-const { renderToStaticMarkup } = require('react-dom/server')
-const { render } = require('react-dom')
+const { renderIntoDocument, findRenderedVNodeWithType } = require('inferno-test-utils');
 
 const withSideEffect = require('../src');
 
 function noop() { }
 const identity = x => x
 
-describe('react-side-effect', () => {
+describe('inferno-side-effect', () => {
   describe('argument validation', () => {
     it('should throw if no reducePropsState function is provided', () => {
       expect(withSideEffect).to.throw('Expected reducePropsToState to be a function.');
@@ -26,7 +27,7 @@ describe('react-side-effect', () => {
     });
 
     it('should throw if no WrappedComponent is provided', () => {
-      expect(withSideEffect(noop, noop)).to.throw('Expected WrappedComponent to be a React component');
+      expect(withSideEffect(noop, noop)).to.throw('Expected WrappedComponent to be an Inferno component');
     });
   });
 
@@ -34,14 +35,14 @@ describe('react-side-effect', () => {
     const withNoopSideEffect = withSideEffect(noop, noop);
 
     it('should wrap the displayName of wrapped createClass component', () => {
-      const DummyComponent = React.createClass({displayName: 'Dummy', render: noop});
+      const DummyComponent = createClass({displayName: 'Dummy', render: noop});
       const SideEffect = withNoopSideEffect(DummyComponent);
 
       expect(SideEffect.displayName).to.equal('SideEffect(Dummy)');
     });
 
     it('should wrap the displayName of wrapped ES2015 class component', () => {
-      class DummyComponent extends React.Component {
+      class DummyComponent extends Component {
         static displayName = 'Dummy'
         render() {}
       }
@@ -59,7 +60,7 @@ describe('react-side-effect', () => {
     });
 
     it('should fallback to "Component"', () => {
-      const DummyComponent = React.createClass({displayName: null, render: noop});
+      const DummyComponent = createClass({displayName: null, render: noop});
       const SideEffect = withNoopSideEffect(DummyComponent);
 
       expect(SideEffect.displayName).to.equal('SideEffect(Component)');
@@ -67,7 +68,7 @@ describe('react-side-effect', () => {
   });
 
   describe('SideEffect component', () => {
-    class DummyComponent extends React.Component {
+    class DummyComponent extends Component {
       render () {
         return <div>hello {this.props.foo}</div>
       }
@@ -91,13 +92,13 @@ describe('react-side-effect', () => {
       });
 
       it('should return the current state', () => {
-        shallow(<SideEffect foo="bar"/>);
+        InfernoServer.renderToString(<SideEffect foo="bar"/>);
         const state = SideEffect.rewind();
         expect(state).to.deep.equal([{foo: 'bar'}]);
       });
 
       it('should reset the state', () => {
-        shallow(<SideEffect foo="bar"/>);
+        InfernoServer.renderToString(<SideEffect foo="bar"/>);
         SideEffect.rewind();
         const state = SideEffect.rewind();
         expect(state).to.equal(undefined);
@@ -106,12 +107,12 @@ describe('react-side-effect', () => {
 
     describe('peek', () => {
       it('should return the current state', () => {
-        shallow(<SideEffect foo="bar"/>);
+        InfernoServer.renderToString(<SideEffect foo="bar"/>);
         expect(SideEffect.peek()).to.deep.equal([{foo: 'bar'}]);
       });
 
       it('should NOT reset the state', () => {
-        shallow(<SideEffect foo="bar"/>);
+        InfernoServer.renderToString(<SideEffect foo="bar"/>);
 
         SideEffect.peek();
         const state = SideEffect.peek();
@@ -130,7 +131,7 @@ describe('react-side-effect', () => {
 
         SideEffect.canUseDOM = true;
 
-        shallow(<SideEffect foo="bar"/>);
+        InfernoServer.renderToString(<SideEffect foo="bar"/>);
 
         expect(sideEffectCollectedData).to.deep.equal([{foo: 'bar'}]);
       });
@@ -144,7 +145,7 @@ describe('react-side-effect', () => {
 
         SideEffect.canUseDOM = false;
 
-        shallow(<SideEffect foo="bar"/>);
+        InfernoServer.renderToString(<SideEffect foo="bar"/>);
 
         let state = SideEffect.rewind();
 
@@ -153,7 +154,7 @@ describe('react-side-effect', () => {
 
         SideEffect.canUseDOM = true;
 
-        shallow(<SideEffect foo="bar"/>);
+        InfernoServer.renderToString(<SideEffect foo="bar"/>);
 
         state = SideEffect.peek();
 
@@ -163,8 +164,8 @@ describe('react-side-effect', () => {
     });
 
     it('should collect props from all instances', () => {
-      shallow(<SideEffect foo="bar"/>);
-      shallow(<SideEffect something="different"/>);
+      InfernoServer.renderToString(<SideEffect foo="bar"/>);
+      InfernoServer.renderToString(<SideEffect something="different"/>);
 
       const state = SideEffect.peek();
 
@@ -172,9 +173,9 @@ describe('react-side-effect', () => {
     });
 
     it('should render the wrapped component', () => {
-      const markup = renderToStaticMarkup(<SideEffect foo="bar"/>);
+      const markup = InfernoServer.renderToStaticMarkup(<SideEffect foo="bar"/>);
 
-      expect(markup).to.equal('<div>hello bar</div>');
+      expect(markup).to.equal('<div>hello <!---->bar</div>');
     });
 
     describe('with DOM', () => {
@@ -197,17 +198,6 @@ describe('react-side-effect', () => {
         global.document = originalDocument;
       });
 
-      it('should be findable by react TestUtils', () => {
-        class AnyComponent extends React.Component {
-          render() {
-            return <SideEffect foo="bar" />
-          }
-        }
-        const wrapper = shallow(<AnyComponent />);
-        const sideEffect = wrapper.find(SideEffect)
-        expect(sideEffect.props()).to.deep.equal({ foo: 'bar' });
-      });
-
       it('should only recompute when component updates', () => {
         let collectCount = 0;
 
@@ -222,13 +212,13 @@ describe('react-side-effect', () => {
         const node = document.createElement('div');
         document.body.appendChild(node);
 
-        render(<SideEffect text="bar" />, node);
+        Inferno.render(<SideEffect text="bar" />, node);
         expect(collectCount).to.equal(1);
-        render(<SideEffect text="bar" />, node);
+        Inferno.render(<SideEffect text="bar" />, node);
         expect(collectCount).to.equal(1);
-        render(<SideEffect text="baz" />, node);
+        Inferno.render(<SideEffect text="baz" />, node);
         expect(collectCount).to.equal(2);
-        render(<SideEffect text="baz" />, node);
+        Inferno.render(<SideEffect text="baz" />, node);
         expect(collectCount).to.equal(2);
       });
     });
