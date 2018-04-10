@@ -1,8 +1,7 @@
 const { expect } = require('chai');
-const Inferno = require('inferno');
-const Component = require('inferno-component');
-const createClass = require('inferno-create-class');
-const InfernoServer = require('inferno-server');
+const { Component, render } = require('inferno');
+const { createClass } = require('inferno-create-class');
+const { renderToStaticMarkup, renderToString } = require('inferno-server');
 const ExecutionEnvironment = require('exenv');
 const jsdom = require('jsdom');
 const { renderIntoDocument, findRenderedVNodeWithType } = require('inferno-test-utils');
@@ -92,13 +91,13 @@ describe('inferno-side-effect', () => {
       });
 
       it('should return the current state', () => {
-        InfernoServer.renderToString(<SideEffect foo="bar"/>);
+        renderToString(<SideEffect foo="bar"/>);
         const state = SideEffect.rewind();
         expect(state).to.deep.equal([{foo: 'bar'}]);
       });
 
       it('should reset the state', () => {
-        InfernoServer.renderToString(<SideEffect foo="bar"/>);
+        renderToString(<SideEffect foo="bar"/>);
         SideEffect.rewind();
         const state = SideEffect.rewind();
         expect(state).to.equal(undefined);
@@ -107,12 +106,12 @@ describe('inferno-side-effect', () => {
 
     describe('peek', () => {
       it('should return the current state', () => {
-        InfernoServer.renderToString(<SideEffect foo="bar"/>);
+        renderToString(<SideEffect foo="bar"/>);
         expect(SideEffect.peek()).to.deep.equal([{foo: 'bar'}]);
       });
 
       it('should NOT reset the state', () => {
-        InfernoServer.renderToString(<SideEffect foo="bar"/>);
+        renderToString(<SideEffect foo="bar"/>);
 
         SideEffect.peek();
         const state = SideEffect.peek();
@@ -131,7 +130,7 @@ describe('inferno-side-effect', () => {
 
         SideEffect.canUseDOM = true;
 
-        InfernoServer.renderToString(<SideEffect foo="bar"/>);
+        renderToString(<SideEffect foo="bar"/>);
 
         expect(sideEffectCollectedData).to.deep.equal([{foo: 'bar'}]);
       });
@@ -145,7 +144,7 @@ describe('inferno-side-effect', () => {
 
         SideEffect.canUseDOM = false;
 
-        InfernoServer.renderToString(<SideEffect foo="bar"/>);
+        renderToString(<SideEffect foo="bar"/>);
 
         let state = SideEffect.rewind();
 
@@ -154,7 +153,7 @@ describe('inferno-side-effect', () => {
 
         SideEffect.canUseDOM = true;
 
-        InfernoServer.renderToString(<SideEffect foo="bar"/>);
+        renderToString(<SideEffect foo="bar"/>);
 
         state = SideEffect.peek();
 
@@ -164,8 +163,8 @@ describe('inferno-side-effect', () => {
     });
 
     it('should collect props from all instances', () => {
-      InfernoServer.renderToString(<SideEffect foo="bar"/>);
-      InfernoServer.renderToString(<SideEffect something="different"/>);
+      renderToString(<SideEffect foo="bar"/>);
+      renderToString(<SideEffect something="different"/>);
 
       const state = SideEffect.peek();
 
@@ -173,7 +172,7 @@ describe('inferno-side-effect', () => {
     });
 
     it('should render the wrapped component', () => {
-      const markup = InfernoServer.renderToStaticMarkup(<SideEffect foo="bar"/>);
+      const markup = renderToStaticMarkup(<SideEffect foo="bar"/>);
 
       expect(markup).to.equal('<div>hello <!---->bar</div>');
     });
@@ -212,13 +211,13 @@ describe('inferno-side-effect', () => {
         const node = document.createElement('div');
         document.body.appendChild(node);
 
-        Inferno.render(<SideEffect text="bar" />, node);
+        render(<SideEffect text="bar" />, node);
         expect(collectCount).to.equal(1);
-        Inferno.render(<SideEffect text="bar" />, node);
+        render(<SideEffect text="bar" />, node);
         expect(collectCount).to.equal(1);
-        Inferno.render(<SideEffect text="baz" />, node);
+        render(<SideEffect text="baz" />, node);
         expect(collectCount).to.equal(2);
-        Inferno.render(<SideEffect text="baz" />, node);
+        render(<SideEffect text="baz" />, node);
         expect(collectCount).to.equal(2);
       });
     });

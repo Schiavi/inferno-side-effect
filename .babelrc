@@ -1,15 +1,11 @@
 {
+  "presets": [
+    ["env", { "targets": {"node": "current"}, "loose": true }]
+  ],
   "plugins": [
     "inferno",
+    "transform-object-rest-spread",
     "transform-class-properties",
-    [
-      "transform-object-rest-spread",
-      {
-        "useBuiltIns": true
-      }
-    ]
-  ],
-  "presets": [
-    "es2015"
+    "add-module-exports"
   ]
 }

@@ -1,9 +1,8 @@
-import Inferno from 'inferno';
-import Component from 'inferno-component';
+import { Component } from 'inferno';
 import ExecutionEnvironment from 'exenv';
 import shallowEqual from 'shallowequal';
 
-module.exports = function withSideEffect(
+export default function withSideEffect(
   reducePropsToState,
   handleStateChangeOnClient,
   mapStateOnServer
