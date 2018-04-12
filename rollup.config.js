@@ -10,24 +10,28 @@ const config = {
   output: {
     name: 'withSideEffect',
     globals: {
-      react: 'React',
+      inferno: 'Inferno',
     },
   },
   plugins: [
     babel({
       babelrc: false,
-      presets: ['react', ['env', { loose: true, modules: false }]],
-      plugins: ['transform-object-rest-spread', 'transform-class-properties'],
+      presets: [['env', { loose: true, modules: false }]],
+      plugins: [
+        'inferno',
+        'transform-object-rest-spread',
+        'transform-class-properties',
+      ],
       exclude: 'node_modules/**',
     }),
   ],
-  external: ['shallowequal', 'react', 'exenv'],
+  external: ['shallowequal', 'inferno', 'exenv'],
 }
 
 if (BUILD_FORMAT === 'umd') {
   // In the browser build, include our smaller dependencies
-  // so users only need to include React
-  config.external = ['react']
+  // so users only need to include Inferno
+  config.external = ['inferno']
   config.plugins.push(
     resolve(),
     commonjs({
